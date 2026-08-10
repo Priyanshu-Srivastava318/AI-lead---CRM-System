@@ -1,15 +1,16 @@
 {
-  "name": "mini-ai-crm",
+  "name": "signalcrm",
   "version": "1.0.0",
-  "description": "Mini AI Lead + CRM System - rule-based extraction, mock scheduling, CRM dashboard, voice demo",
-  "main": "server.js",
+  "private": true,
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.19.2",
     "serverless-http": "^3.2.0",
     "@netlify/blobs": "^7.3.0"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
