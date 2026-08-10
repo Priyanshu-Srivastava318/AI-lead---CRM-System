@@ -88,6 +88,7 @@ let recognition = null;
 let voiceSlots = [];
 let voiceSelectedSlot = null;
 let voiceRawMessage = '';
+let isListening = false; // guards against double .start() calls
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const voiceBtn = document.getElementById('voiceBtn');
@@ -103,9 +104,21 @@ if (!SpeechRecognition) {
 
   const wave = document.getElementById('voiceWave');
 
-  recognition.onstart = () => { voiceStatus.textContent = 'Listening…'; wave.classList.add('listening'); };
-  recognition.onerror = (e) => { voiceStatus.textContent = 'Error: ' + e.error; wave.classList.remove('listening'); };
-  recognition.onend = () => { voiceStatus.textContent = 'Tap the mic to speak'; wave.classList.remove('listening'); };
+  recognition.onstart = () => {
+    isListening = true;
+    voiceStatus.textContent = 'Listening…';
+    wave.classList.add('listening');
+  };
+  recognition.onerror = (e) => {
+    isListening = false;
+    voiceStatus.textContent = 'Error: ' + e.error;
+    wave.classList.remove('listening');
+  };
+  recognition.onend = () => {
+    isListening = false;
+    voiceStatus.textContent = 'Tap the mic to speak';
+    wave.classList.remove('listening');
+  };
   recognition.onresult = (event) => {
     const transcript = event.results[0][0].transcript;
     document.getElementById('voiceTranscript').value = transcript;
@@ -115,7 +128,21 @@ if (!SpeechRecognition) {
 
 voiceBtn.addEventListener('click', () => {
   if (!recognition) return;
-  recognition.start();
+
+  if (isListening) {
+    // Already running — stop instead of calling start() again,
+    // which throws InvalidStateError: "recognition has already started."
+    recognition.stop();
+    return;
+  }
+
+  try {
+    recognition.start();
+  } catch (err) {
+    // Guards against any race where isListening hasn't updated yet
+    console.error('Speech recognition start failed:', err);
+    isListening = false;
+  }
 });
 
 function speak(text) {
