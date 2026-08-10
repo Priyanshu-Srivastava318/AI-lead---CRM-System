@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mini AI Lead + CRM System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+    </span>
+    <div class="brand-text">
+      <h1>Signal<span class="brand-accent">CRM</span></h1>
+      <p class="brand-sub">AI intake &middot; scheduling &middot; pipeline</p>
+    </div>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="chat">Intake</button>
+    <button class="tab-btn" data-tab="voice">Voice</button>
+    <button class="tab-btn" data-tab="crm">Dashboard</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ============ TAB 1: CHAT / AI INTAKE ============ -->
+  <section id="tab-chat" class="tab-panel active">
+    <div class="grid-2">
+      <div class="card">
+        <span class="eyebrow">Step 01</span>
+        <h2>Read the message</h2>
+        <p class="hint">Paste a lead's inbound message — WhatsApp, website form, or email.</p>
+        <textarea id="msgInput" rows="4" placeholder="Hi, I'm Rahul. I need an AI calling solution and would like to schedule a meeting tomorrow.">Hi, I'm Rahul. I need an AI calling solution and would like to schedule a meeting tomorrow.</textarea>
+        <button id="extractBtn" class="btn-primary">Extract details</button>
+
+        <div id="extractResult" class="result-box hidden">
+          <h3>Extracted</h3>
+          <div class="field"><label>Name</label><input id="fName" type="text" /></div>
+          <div class="field"><label>Requirement</label><input id="fRequirement" type="text" /></div>
+          <div class="field">
+            <label>Lead status</label>
+            <select id="fStatus">
+              <option>Hot</option>
+              <option>Warm</option>
+              <option>Cold</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="eyebrow">Step 02</span>
+        <h2>Offer a slot</h2>
+        <p class="hint">Mock availability — pick one to lock in the meeting.</p>
+        <div id="slotsBox" class="slots-box">
+          <p class="muted">Extract a message to see open slots.</p>
+        </div>
+        <button id="bookBtn" class="btn-primary" disabled>Confirm booking</button>
+        <div id="bookResult" class="result-box hidden success"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 2: VOICE DEMO ============ -->
+  <section id="tab-voice" class="tab-panel">
+    <div class="card voice-card">
+      <span class="eyebrow">Browser speech &middot; no paid API</span>
+      <h2>Voice intake</h2>
+      <p class="hint">Uses your browser's native Speech Recognition and Speech Synthesis (Chrome recommended). Speak your message the way a caller would — the same extraction pipeline runs on the transcript.</p>
+
+      <div class="voice-console">
+        <button id="voiceBtn" class="mic-btn">
+          <span class="mic-glyph">●</span>
+        </button>
+        <div class="wave" id="voiceWave">
+          <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+        </div>
+        <span id="voiceStatus" class="muted">Tap the mic to speak</span>
+      </div>
+
+      <div class="field" style="margin-top:20px;">
+        <label>Transcript</label>
+        <textarea id="voiceTranscript" rows="3" placeholder="Your speech will appear here — or type directly."></textarea>
+      </div>
+      <button id="voiceExtractBtn" class="btn-secondary">Process transcript</button>
+
+      <div id="voiceExtractResult" class="result-box hidden">
+        <h3>Extracted</h3>
+        <div class="field"><label>Name</label><input id="vName" type="text" /></div>
+        <div class="field"><label>Requirement</label><input id="vRequirement" type="text" /></div>
+        <div class="field">
+          <label>Lead status</label>
+          <select id="vStatus">
+            <option>Hot</option>
+            <option>Warm</option>
+            <option>Cold</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="voiceSlotsBox" class="slots-box hidden"></div>
+      <button id="voiceBookBtn" class="btn-primary hidden">Confirm booking</button>
+      <div id="voiceBookResult" class="result-box hidden success"></div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 3: CRM DASHBOARD ============ -->
+  <section id="tab-crm" class="tab-panel">
+    <div class="crm-header">
+      <div>
+        <span class="eyebrow">Pipeline</span>
+        <h2>CRM dashboard</h2>
+      </div>
+      <div class="crm-actions">
+        <button id="refreshBtn" class="btn-secondary">Refresh</button>
+        <button id="resetBtn" class="btn-danger">Reset data</button>
+      </div>
+    </div>
+
+    <div class="stat-row" id="statRow"></div>
+
+    <div class="card table-card">
+      <h3>Contacts</h3>
+      <table class="data-table" id="contactsTable"><thead><tr><th>Name</th><th>Created</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="card table-card">
+      <h3>Leads</h3>
+      <table class="data-table" id="leadsTable"><thead><tr><th>Contact</th><th>Requirement</th><th>Status</th><th>Created</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="card table-card">
+      <h3>Conversations</h3>
+      <table class="data-table" id="convTable"><thead><tr><th>Contact</th><th>Message</th><th>Channel</th><th>Created</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="card table-card">
+      <h3>Appointments</h3>
+      <table class="data-table" id="apptTable"><thead><tr><th>Contact</th><th>Slot</th><th>Created</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
