@@ -8,6 +8,8 @@
     "dev": "node server.js"
   },
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "serverless-http": "^3.2.0",
+    "@netlify/blobs": "^7.3.0"
   }
 }

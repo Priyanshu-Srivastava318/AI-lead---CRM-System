@@ -13,8 +13,12 @@ Run locally with the steps below (see "Run it").
 
 ```
 mini-ai-crm/
-├── server.js         Express backend: extraction logic + CRM REST API
-├── data/db.json       Flat-file JSON "database" (contacts/leads/conversations/appointments)
+├── server.js               Express server for LOCAL dev (JSON file storage)
+├── netlify.toml             Netlify build/redirect config
+├── netlify/functions/
+│   └── api.js                Same API, packaged as a Netlify Function
+│                              (used in production — storage via Netlify Blobs)
+├── data/db.json               Flat-file JSON "database" (local dev only)
 ├── public/
 │   ├── index.html      3-tab UI: AI Intake, Voice Demo, CRM Dashboard
 │   ├── style.css
@@ -62,7 +66,7 @@ SQLite/Postgres later without changing the API surface.
 - Zero external dependencies beyond Express — runs anywhere Node runs, no DB
   server to install, easy to demo in under a minute.
 
-## Run it
+## Run it locally
 
 ```bash
 npm install
@@ -77,6 +81,39 @@ Try the example message (pre-filled in the textbox):
 
 Expected extraction: Name = Rahul, Requirement = "an AI calling solution",
 Status = Hot (because of "tomorrow" + "schedule").
+
+## Deploy to Netlify
+
+The Express server (`server.js`) is for **local development only** — it
+writes to a local JSON file, which doesn't persist on Netlify's serverless
+platform. For production, the same API logic runs as a **Netlify Function**
+(`netlify/functions/api.js`) backed by **Netlify Blobs** for storage (free,
+no paid service, persists across requests — unlike a flat file on a
+stateless function).
+
+**One-time setup:**
+1. Push this repo to GitHub (already done ✅)
+2. Go to [app.netlify.com](https://app.netlify.com) → "Add new site" →
+   "Import an existing project" → pick this repo
+3. Build settings (should auto-detect from `netlify.toml`, but confirm):
+   - Build command: `npm install`
+   - Publish directory: `public`
+   - Functions directory: `netlify/functions`
+4. Deploy. Netlify Blobs works automatically on Netlify's own infra — no
+   extra config or API keys needed.
+
+**How routing works:** the frontend calls `/api/message`, `/api/book`,
+etc. `netlify.toml` redirects `/api/*` → the serverless function, which
+handles all four routes (`/message`, `/book`, `/crm`, `/reset`) the same
+way `server.js` does locally.
+
+**CLI alternative** (if you'd rather deploy from terminal):
+```bash
+npm install -g netlify-cli
+netlify login
+netlify init      # links this repo to a new/existing Netlify site
+netlify deploy --prod
+```
 
 ## Possible future improvements
 - Swap rule-based extraction for a free-tier/local LLM for more robust NLP
