@@ -16,18 +16,39 @@ function store() {
   return getStore('crm-data');
 }
 
+// Netlify Blobs is automatically available in a correctly linked Netlify
+// Function. Keep a warm-function fallback as well: it lets the demo complete
+// its booking and dashboard flow when a site has not yet been linked to the
+// Blobs environment, instead of turning a valid booking into a 502 response.
+const emptyDB = () => ({ contacts: [], leads: [], conversations: [], appointments: [] });
+let fallbackDB = emptyDB();
+
+function useFallback(error) {
+  console.warn('Netlify Blobs is unavailable; using temporary demo storage.', error.message);
+}
+
 async function readDB() {
-  const s = store();
-  const data = await s.get('db', { type: 'json' });
-  if (!data) {
-    const initial = { contacts: [], leads: [], conversations: [], appointments: [] };
-    await s.setJSON('db', initial);
-    return initial;
+  try {
+    const s = store();
+    const data = await s.get('db', { type: 'json' });
+    if (!data) {
+      const initial = emptyDB();
+      await s.setJSON('db', initial);
+      return initial;
+    }
+    return data;
+  } catch (error) {
+    useFallback(error);
+    return fallbackDB;
   }
-  return data;
 }
 async function writeDB(db) {
-  await store().setJSON('db', db);
+  fallbackDB = db;
+  try {
+    await store().setJSON('db', db);
+  } catch (error) {
+    useFallback(error);
+  }
 }
 function id() {
   return crypto.randomBytes(6).toString('hex');
@@ -162,7 +183,7 @@ app.get('/crm', async (req, res) => {
 });
 
 app.post('/reset', async (req, res) => {
-  await writeDB({ contacts: [], leads: [], conversations: [], appointments: [] });
+  await writeDB(emptyDB());
   res.json({ ok: true });
 });
 
