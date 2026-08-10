@@ -167,5 +167,10 @@ app.post('/reset', async (req, res) => {
 });
 
 module.exports.handler = serverless(app, {
-  basePath: '/.netlify/functions/api',
+  // Requests reach this function through the /api/* Netlify redirect below.
+  // Netlify preserves that original request path for the serverless handler,
+  // so /api must be stripped before Express can match /message, /book, etc.
+  // Using the internal function URL here caused every deployed API request to
+  // remain /api/<route>, which produced the 404 shown in production.
+  basePath: '/api',
 });

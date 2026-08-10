@@ -10,6 +10,24 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // ===================== Shared helpers =====================
+async function apiRequest(url, options = {}) {
+  const res = await fetch(url, options);
+  const contentType = res.headers.get('content-type') || '';
+  const body = contentType.includes('application/json')
+    ? await res.json()
+    : { error: await res.text() || `Request failed (${res.status})` };
+
+  if (!res.ok) {
+    throw new Error(body.error || `Request failed (${res.status})`);
+  }
+  return body;
+}
+
+function showRequestError(error) {
+  console.error(error);
+  alert(`Could not complete the request: ${error.message}`);
+}
+
 function renderSlots(container, slots, onSelect) {
   container.innerHTML = '';
   let selected = null;
@@ -38,12 +56,17 @@ document.getElementById('extractBtn').addEventListener('click', async () => {
   if (!message.trim()) return alert('Please enter a message.');
   chatRawMessage = message;
 
-  const res = await fetch('/api/message', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message })
-  });
-  const data = await res.json();
+  let data;
+  try {
+    data = await apiRequest('/api/message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message })
+    });
+  } catch (error) {
+    showRequestError(error);
+    return;
+  }
 
   document.getElementById('extractResult').classList.remove('hidden');
   document.getElementById('fName').value = data.extracted.name;
@@ -68,12 +91,17 @@ document.getElementById('bookBtn').addEventListener('click', async () => {
     rawMessage: chatRawMessage,
     slot: chatSelectedSlot,
   };
-  const res = await fetch('/api/book', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  const data = await res.json();
+  let data;
+  try {
+    data = await apiRequest('/api/book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (error) {
+    showRequestError(error);
+    return;
+  }
   const box = document.getElementById('bookResult');
   box.classList.remove('hidden');
   box.innerHTML = `<h3>✅ Booking Confirmed</h3>
@@ -174,12 +202,17 @@ document.getElementById('voiceExtractBtn').addEventListener('click', async () =>
   if (!message.trim()) return alert('No transcript yet — speak or type first.');
   voiceRawMessage = message;
 
-  const res = await fetch('/api/message', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message })
-  });
-  const data = await res.json();
+  let data;
+  try {
+    data = await apiRequest('/api/message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message })
+    });
+  } catch (error) {
+    showRequestError(error);
+    return;
+  }
 
   document.getElementById('voiceExtractResult').classList.remove('hidden');
   document.getElementById('vName').value = data.extracted.name;
@@ -212,12 +245,17 @@ document.getElementById('voiceBookBtn').addEventListener('click', async () => {
     rawMessage: voiceRawMessage,
     slot: voiceSelectedSlot,
   };
-  const res = await fetch('/api/book', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  const data = await res.json();
+  let data;
+  try {
+    data = await apiRequest('/api/book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (error) {
+    showRequestError(error);
+    return;
+  }
   const box = document.getElementById('voiceBookResult');
   box.classList.remove('hidden');
   box.innerHTML = `<h3>✅ Booking Confirmed</h3>
@@ -230,8 +268,13 @@ document.getElementById('voiceBookBtn').addEventListener('click', async () => {
 
 // ===================== TAB 3: CRM Dashboard =====================
 async function loadCRM() {
-  const res = await fetch('/api/crm');
-  const db = await res.json();
+  let db;
+  try {
+    db = await apiRequest('/api/crm');
+  } catch (error) {
+    showRequestError(error);
+    return;
+  }
 
   const statRow = document.getElementById('statRow');
   const hotCount = db.leads.filter(l => l.status === 'Hot').length;
@@ -292,6 +335,10 @@ function fillTable(tableId, rows, mapFn, allowHtml) {
 document.getElementById('refreshBtn').addEventListener('click', loadCRM);
 document.getElementById('resetBtn').addEventListener('click', async () => {
   if (!confirm('Reset all demo data?')) return;
-  await fetch('/api/reset', { method: 'POST' });
-  loadCRM();
+  try {
+    await apiRequest('/api/reset', { method: 'POST' });
+    loadCRM();
+  } catch (error) {
+    showRequestError(error);
+  }
 });
