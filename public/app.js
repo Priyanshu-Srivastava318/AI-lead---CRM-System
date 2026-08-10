@@ -89,6 +89,7 @@ let voiceSlots = [];
 let voiceSelectedSlot = null;
 let voiceRawMessage = '';
 let isListening = false; // guards against double .start() calls
+let lastError = null;    // lets onend know not to overwrite an error message
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const voiceBtn = document.getElementById('voiceBtn');
@@ -106,18 +107,33 @@ if (!SpeechRecognition) {
 
   recognition.onstart = () => {
     isListening = true;
+    lastError = null;
     voiceStatus.textContent = 'Listening…';
     wave.classList.add('listening');
   };
   recognition.onerror = (e) => {
     isListening = false;
-    voiceStatus.textContent = 'Error: ' + e.error;
+    lastError = e.error;
     wave.classList.remove('listening');
+
+    const messages = {
+      'not-allowed': 'Mic permission blocked — allow microphone access for this site and try again.',
+      'audio-capture': 'No microphone found — check your device settings.',
+      'network': 'Speech service unreachable — this often happens in Brave (Shields) or offline. Try Chrome.',
+      'no-speech': 'No speech detected — tap the mic and try again.',
+    };
+    voiceStatus.textContent = messages[e.error] || ('Error: ' + e.error);
   };
   recognition.onend = () => {
     isListening = false;
-    voiceStatus.textContent = 'Tap the mic to speak';
     wave.classList.remove('listening');
+    // Don't stomp on an error message that onerror just set —
+    // onend always fires right after onerror, and used to silently
+    // overwrite it with "Tap the mic to speak" before the user
+    // could ever read what went wrong.
+    if (!lastError) {
+      voiceStatus.textContent = 'Tap the mic to speak';
+    }
   };
   recognition.onresult = (event) => {
     const transcript = event.results[0][0].transcript;
@@ -137,6 +153,7 @@ voiceBtn.addEventListener('click', () => {
   }
 
   try {
+    lastError = null;
     recognition.start();
   } catch (err) {
     // Guards against any race where isListening hasn't updated yet
